@@ -1,9 +1,11 @@
 ﻿@page "/journal"
+@using StudentGrades.Models
 @using StudentGrades.Data
 @inject AppDbContext Db
+
 <h3>Журнал по предмету</h3>
 
-<select @bind="selectedSubjectId">
+<select @bind="selectedSubjectId" class="form-control my-1">
     <option value="0">Выберите предмет</option>
     @foreach (var s in subjects)
     {
@@ -11,10 +13,15 @@
     }
 </select>
 
+<input type="text" @bind="studentFilter" placeholder="Фильтр по студенту" class="form-control my-2" />
+
+<div class="mb-2">
+    <button class="btn btn-secondary btn-sm me-1" @onclick="SortAsc">А→Я</button>
+    <button class="btn btn-secondary btn-sm" @onclick="SortDesc">Я→А</button>
+</div>
+
 @if (selectedSubjectId > 0)
 {
-    <h4>Студенты и оценки:</h4>
-
     <table class="table">
         <thead>
             <tr>
@@ -23,7 +30,7 @@
             </tr>
         </thead>
         <tbody>
-            @foreach (var st in students)
+            @foreach (var st in FilteredStudents())
             {
                 var grades = Db.Grades
                 .Where(g => g.SubjectId == selectedSubjectId && g.StudentId == st.Id)
@@ -31,12 +38,7 @@
 
                 <tr>
                     <td>@st.FullName</td>
-                    <td>
-                        @foreach (var g in grades)
-                        {
-                            <span>@g.Score </span>
-                        }
-                    </td>
+                    <td>@string.Join(", ", grades.Select(g => g.Score))</td>
                 </tr>
             }
         </tbody>
@@ -47,10 +49,32 @@
     private List<Subject> subjects = new();
     private List<Student> students = new();
     private int selectedSubjectId;
+    private string studentFilter = "";
+    private bool sortAsc = true;
 
     protected override void OnInitialized()
     {
         subjects = Db.Subjects.ToList();
         students = Db.Students.ToList();
+    }
+
+    private void SortAsc()
+    {
+        sortAsc = true;
+    }
+
+    private void SortDesc()
+    {
+        sortAsc = false;
+    }
+
+    private IEnumerable<Student> FilteredStudents()
+    {
+        var filtered = students
+            .Where(s => string.IsNullOrEmpty(studentFilter) || s.FullName.Contains(studentFilter, StringComparison.OrdinalIgnoreCase));
+
+        return sortAsc
+            ? filtered.OrderBy(s => s.FullName)
+            : filtered.OrderByDescending(s => s.FullName);
     }
 }

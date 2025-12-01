@@ -1,4 +1,4 @@
-﻿namespace StudentGrades.Data
+﻿namespace StudentGrades.Models
 {
     public class Subject
     {

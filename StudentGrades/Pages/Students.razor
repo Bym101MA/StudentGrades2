@@ -1,79 +1,35 @@
 ﻿@page "/students"
 @using StudentGrades.Data
 @inject AppDbContext Db
+
 <h3>Студенты</h3>
 
-<button @onclick="ShowAddForm">Добавить студента</button>
+<EditForm Model="student" OnValidSubmit="AddStudent">
+    <InputText @bind-Value="student.LastName" placeholder="Фамилия" class="form-control my-1" />
+    <InputText @bind-Value="student.FirstName" placeholder="Имя" class="form-control my-1" />
+    <InputText @bind-Value="student.Patronymic" placeholder="Отчество" class="form-control my-1" />
+    <button type="submit" class="btn btn-primary mt-1">Добавить студента</button>
+</EditForm>
 
-@if (showForm)
-{
-    <EditForm Model="currentStudent" OnValidSubmit="SaveStudent">
-        <InputText @bind-Value="currentStudent.FirstName" placeholder="Имя" />
-        <InputText @bind-Value="currentStudent.LastName" placeholder="Фамилия" />
-        <button type="submit">Сохранить</button>
-        <button type="button" @onclick="Cancel">Отмена</button>
-    </EditForm>
-}
-
-<table class="table">
+<table class="table mt-3">
     <thead>
-        <tr><th>ФИО</th><th>Действия</th></tr>
+        <tr><th>ФИО</th></tr>
     </thead>
     <tbody>
-        @foreach (var s in students)
+        @foreach (var s in Db.Students)
         {
-            <tr>
-                <td>@s.FullName</td>
-                <td>
-                    <button @onclick="() => EditStudent(s)">Редактировать</button>
-                    <button @onclick="() => DeleteStudent(s.Id)">Удалить</button>
-                </td>
-            </tr>
+            <tr><td>@s.FullName</td></tr>
         }
     </tbody>
 </table>
 
 @code {
-    private List<Student> students = new();
-    private Student currentStudent = new();
-    private bool showForm = false;
+    private Student student = new Student();
 
-    protected override void OnInitialized()
+    private void AddStudent()
     {
-        students = Db.Students.ToList();
-    }
-
-    private void ShowAddForm()
-    {
-        currentStudent = new Student();
-        showForm = true;
-    }
-
-    private void Cancel() => showForm = false;
-
-    private void SaveStudent()
-    {
-        if (currentStudent.Id == 0) Db.Students.Add(currentStudent);
-        else Db.Students.Update(currentStudent);
+        Db.Students.Add(student);
         Db.SaveChanges();
-        students = Db.Students.ToList();
-        showForm = false;
-    }
-
-    private void EditStudent(Student s)
-    {
-        currentStudent = s;
-        showForm = true;
-    }
-
-    private void DeleteStudent(int id)
-    {
-        var s = Db.Students.Find(id);
-        if (s != null)
-        {
-            Db.Students.Remove(s);
-            Db.SaveChanges();
-            students = Db.Students.ToList();
-        }
+        student = new Student();
     }
 }

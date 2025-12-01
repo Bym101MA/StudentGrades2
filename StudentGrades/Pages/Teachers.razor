@@ -1,0 +1,82 @@
+﻿@page "/Teachers"
+@using StudentGrades.Data
+@inject AppDbContext Db
+
+<h3>Преподаватели</h3>
+
+<button @onclick="ShowAddForm">Добавить преподавателя</button>
+
+@if (showForm)
+{
+    <EditForm Model="currentTeacher" OnValidSubmit="SaveTeacher">
+        <InputText @bind-Value="currentTeacher.FirstName" placeholder="Имя" />
+        <InputText @bind-Value="currentTeacher.LastName" placeholder="Фамилия" />
+        <InputText @bind-Value="currentTeacher.Position" placeholder="Должность" />
+        <button type="submit">Сохранить</button>
+        <button type="button" @onclick="Cancel">Отмена</button>
+    </EditForm>
+}
+
+<table class="table">
+    <thead>
+        <tr><th>ФИО</th><th>Должность</th><th>Действия</th></tr>
+    </thead>
+    <tbody>
+        @foreach (var t in teachers)
+        {
+            <tr>
+                <td>@t.FullName</td>
+                <td>@t.Position</td>
+                <td>
+                    <button @onclick="() => EditTeacher(t)">Редактировать</button>
+                    <button @onclick="() => DeleteTeacher(t.Id)">Удалить</button>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@code {
+    private List<Teacher> teachers = new();
+    private Teacher currentTeacher = new();
+    private bool showForm = false;
+
+    protected override void OnInitialized()
+    {
+        teachers = Db.Teachers.ToList();
+    }
+
+    private void ShowAddForm()
+    {
+        currentTeacher = new Teacher();
+        showForm = true;
+    }
+
+    private void Cancel() => showForm = false;
+
+    private void SaveTeacher()
+    {
+        if (currentTeacher.Id == 0) Db.Teachers.Add(currentTeacher);
+        else Db.Teachers.Update(currentTeacher);
+        Db.SaveChanges();
+        teachers = Db.Teachers.ToList();
+        showForm = false;
+    }
+
+    private void EditTeacher(Teacher t)
+    {
+        currentTeacher = t;
+        showForm = true;
+    }
+
+    private void DeleteTeacher(int id)
+    {
+        var t = Db.Teachers.Find(id);
+        if (t != null)
+        {
+            Db.Teachers.Remove(t);
+            Db.SaveChanges();
+            teachers = Db.Teachers.ToList();
+        }
+    }
+}

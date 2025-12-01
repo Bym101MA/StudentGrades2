@@ -1,0 +1,115 @@
+﻿@page "/grades"
+@using Microsoft.EntityFrameworkCore
+@using StudentGrades.Data
+@inject AppDbContext Db
+
+<h3>Оценки</h3>
+
+<button @onclick="ShowAddForm">Добавить оценку</button>
+
+@if (showForm)
+{
+    <EditForm Model="currentGrade" OnValidSubmit="SaveGrade">
+        <select @bind="currentGrade.StudentId">
+            <option value="0">Выберите студента</option>
+            @foreach (var s in students)
+            {
+                <option value="@s.Id">@s.FullName</option>
+            }
+        </select>
+
+        <select @bind="currentGrade.SubjectId">
+            <option value="0">Выберите предмет</option>
+            @foreach (var s in subjects)
+            {
+                <option value="@s.Id">@s.Name</option>
+            }
+        </select>
+
+        <select @bind="currentGrade.TeacherId">
+            <option value="0">Выберите преподавателя</option>
+            @foreach (var t in teachers)
+            {
+                <option value="@t.Id">@t.FullName</option>
+            }
+        </select>
+
+        <InputNumber @bind-Value="currentGrade.Score" placeholder="Оценка" />
+
+        <button type="submit">Сохранить</button>
+        <button type="button" @onclick="Cancel">Отмена</button>
+    </EditForm>
+}
+
+<table class="table">
+    <thead>
+        <tr><th>Студент</th><th>Предмет</th><th>Преподаватель</th><th>Оценка</th><th>Дата</th><th>Действия</th></tr>
+    </thead>
+    <tbody>
+        @foreach (var g in grades)
+        {
+            <tr>
+                <td>@g.Student.FullName</td>
+                <td>@g.Subject.Name</td>
+                <td>@g.Teacher.FullName</td>
+                <td>@g.Score</td>
+                <td>@g.Date.ToShortDateString()</td>
+                <td>
+                    <button @onclick="() => EditGrade(g)">Редактировать</button>
+                    <button @onclick="() => DeleteGrade(g.Id)">Удалить</button>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@code {
+    private List<Student> students = new();
+    private List<Subject> subjects = new();
+    private List<Teacher> teachers = new();
+    private List<Grade> grades = new();
+    private Grade currentGrade = new();
+    private bool showForm = false;
+
+    protected override void OnInitialized()
+    {
+        students = Db.Students.ToList();
+        subjects = Db.Subjects.ToList();
+        teachers = Db.Teachers.ToList();
+        grades = Db.Grades.Include(g => g.Student).Include(g => g.Subject).Include(g => g.Teacher).ToList();
+    }
+
+    private void ShowAddForm()
+    {
+        currentGrade = new Grade();
+        showForm = true;
+    }
+
+    private void Cancel() => showForm = false;
+
+    private void SaveGrade()
+    {
+        if (currentGrade.Id == 0) Db.Grades.Add(currentGrade);
+        else Db.Grades.Update(currentGrade);
+        Db.SaveChanges();
+        grades = Db.Grades.Include(g => g.Student).Include(g => g.Subject).Include(g => g.Teacher).ToList();
+        showForm = false;
+    }
+
+    private void EditGrade(Grade g)
+    {
+        currentGrade = g;
+        showForm = true;
+    }
+
+    private void DeleteGrade(int id)
+    {
+        var g = Db.Grades.Find(id);
+        if (g != null)
+        {
+            Db.Grades.Remove(g);
+            Db.SaveChanges();
+            grades = Db.Grades.Include(g => g.Student).Include(g => g.Subject).Include(g => g.Teacher).ToList();
+        }
+    }
+}

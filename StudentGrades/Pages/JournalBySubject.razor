@@ -1,0 +1,56 @@
+﻿@page "/journal"
+@using StudentGrades.Data
+@inject AppDbContext Db
+<h3>Журнал по предмету</h3>
+
+<select @bind="selectedSubjectId">
+    <option value="0">Выберите предмет</option>
+    @foreach (var s in subjects)
+    {
+        <option value="@s.Id">@s.Name</option>
+    }
+</select>
+
+@if (selectedSubjectId > 0)
+{
+    <h4>Студенты и оценки:</h4>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Студент</th>
+                <th>Оценки</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var st in students)
+            {
+                var grades = Db.Grades
+                .Where(g => g.SubjectId == selectedSubjectId && g.StudentId == st.Id)
+                .ToList();
+
+                <tr>
+                    <td>@st.FullName</td>
+                    <td>
+                        @foreach (var g in grades)
+                        {
+                            <span>@g.Score </span>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<Subject> subjects = new();
+    private List<Student> students = new();
+    private int selectedSubjectId;
+
+    protected override void OnInitialized()
+    {
+        subjects = Db.Subjects.ToList();
+        students = Db.Students.ToList();
+    }
+}

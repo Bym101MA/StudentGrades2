@@ -1,0 +1,79 @@
+﻿@page "/subjects"
+@using StudentGrades.Data
+@inject AppDbContext Db
+
+<h3>Предметы</h3>
+
+<button @onclick="ShowAddForm">Добавить предмет</button>
+
+@if (showForm)
+{
+    <EditForm Model="currentSubject" OnValidSubmit="SaveSubject">
+        <InputText @bind-Value="currentSubject.Name" placeholder="Название предмета" />
+        <button type="submit">Сохранить</button>
+        <button type="button" @onclick="Cancel">Отмена</button>
+    </EditForm>
+}
+
+<table class="table">
+    <thead>
+        <tr><th>Название</th><th>Действия</th></tr>
+    </thead>
+    <tbody>
+        @foreach (var s in subjects)
+        {
+            <tr>
+                <td>@s.Name</td>
+                <td>
+                    <button @onclick="() => EditSubject(s)">Редактировать</button>
+                    <button @onclick="() => DeleteSubject(s.Id)">Удалить</button>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@code {
+    private List<Subject> subjects = new();
+    private Subject currentSubject = new();
+    private bool showForm = false;
+
+    protected override void OnInitialized()
+    {
+        subjects = Db.Subjects.ToList();
+    }
+
+    private void ShowAddForm()
+    {
+        currentSubject = new Subject();
+        showForm = true;
+    }
+
+    private void Cancel() => showForm = false;
+
+    private void SaveSubject()
+    {
+        if (currentSubject.Id == 0) Db.Subjects.Add(currentSubject);
+        else Db.Subjects.Update(currentSubject);
+        Db.SaveChanges();
+        subjects = Db.Subjects.ToList();
+        showForm = false;
+    }
+
+    private void EditSubject(Subject s)
+    {
+        currentSubject = s;
+        showForm = true;
+    }
+
+    private void DeleteSubject(int id)
+    {
+        var s = Db.Subjects.Find(id);
+        if (s != null)
+        {
+            Db.Subjects.Remove(s);
+            Db.SaveChanges();
+            subjects = Db.Subjects.ToList();
+        }
+    }
+}

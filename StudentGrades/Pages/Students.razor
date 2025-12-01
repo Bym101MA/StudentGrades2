@@ -1,0 +1,79 @@
+﻿@page "/students"
+@using StudentGrades.Data
+@inject AppDbContext Db
+<h3>Студенты</h3>
+
+<button @onclick="ShowAddForm">Добавить студента</button>
+
+@if (showForm)
+{
+    <EditForm Model="currentStudent" OnValidSubmit="SaveStudent">
+        <InputText @bind-Value="currentStudent.FirstName" placeholder="Имя" />
+        <InputText @bind-Value="currentStudent.LastName" placeholder="Фамилия" />
+        <button type="submit">Сохранить</button>
+        <button type="button" @onclick="Cancel">Отмена</button>
+    </EditForm>
+}
+
+<table class="table">
+    <thead>
+        <tr><th>ФИО</th><th>Действия</th></tr>
+    </thead>
+    <tbody>
+        @foreach (var s in students)
+        {
+            <tr>
+                <td>@s.FullName</td>
+                <td>
+                    <button @onclick="() => EditStudent(s)">Редактировать</button>
+                    <button @onclick="() => DeleteStudent(s.Id)">Удалить</button>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@code {
+    private List<Student> students = new();
+    private Student currentStudent = new();
+    private bool showForm = false;
+
+    protected override void OnInitialized()
+    {
+        students = Db.Students.ToList();
+    }
+
+    private void ShowAddForm()
+    {
+        currentStudent = new Student();
+        showForm = true;
+    }
+
+    private void Cancel() => showForm = false;
+
+    private void SaveStudent()
+    {
+        if (currentStudent.Id == 0) Db.Students.Add(currentStudent);
+        else Db.Students.Update(currentStudent);
+        Db.SaveChanges();
+        students = Db.Students.ToList();
+        showForm = false;
+    }
+
+    private void EditStudent(Student s)
+    {
+        currentStudent = s;
+        showForm = true;
+    }
+
+    private void DeleteStudent(int id)
+    {
+        var s = Db.Students.Find(id);
+        if (s != null)
+        {
+            Db.Students.Remove(s);
+            Db.SaveChanges();
+            students = Db.Students.ToList();
+        }
+    }
+}
